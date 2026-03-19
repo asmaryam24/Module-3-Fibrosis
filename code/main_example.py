@@ -1,26 +1,34 @@
-"""
-Module 3: Count black and white pixels, compute the percentage of white pixels
-in .jpg images, write results to CSV, and optionally interpolate a point.
-"""
- 
-import sys
+'''Module 3: count black and white pixels and compute the percentage of white pixels in a .jpg image and extrapolate points'''
+
+from termcolor import colored
 import cv2
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
-from termcolor import colored
- 
-# Configuration
+import pandas as pd
 
-FILENAMES = [
-    r"images/MASK_SK658 Slobe ch010118.jpg",
-    r"images/MASK_SK658 Slobe ch010113.jpg",        
-    r"images/MASK_SK658 Slobe ch010098.jpg",
-    r"images/MASK_SK658 Llobe ch010022.jpg",
-    r"images/MASK_SK658 Slobe ch010089.jpg",
-    r"images/MASK_SK658 Slobe ch010156.jpg"
+# Load the images you want to analyze
+
+filenames = [
+    r"../images/MASK_SK658 Llobe ch010039.jpg",
+    r"../images/MASK_SK658 Slobe ch010066.jpg",
+    r"../images/MASK_SK658 Slobe ch010147.jpg",
+    r"../images/MASK_SK658 Slobe ch010110.jpg",
+    r"../images/MASK_SK658 Slobe ch010130.jpg",
+    r"../images/MASK_SK658 Slobe ch010114.jpg",
 ]
+'''
+
+filenames = [
+    r"../images/MASK_SK658 Slobe ch010118.jpg",
+    r"../images/MASK_SK658 Slobe ch010113.jpg",        
+    r"../images/MASK_SK658 Slobe ch010098.jpg",
+    r"../images/MASK_SK658 Llobe ch010022.jpg",
+    r"../images/MASK_SK658 Slobe ch010089.jpg",
+    r"../images/MASK_SK658 Slobe ch010156.jpg"
+]
+
 
 # Load depths from CSV
 depth_df = pd.read_csv("Filenames and Depths for Students.csv")
