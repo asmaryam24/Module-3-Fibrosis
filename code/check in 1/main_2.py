@@ -4,13 +4,15 @@ in .jpg images, write results to CSV, and optionally interpolate a point.
 """
  
 import sys
+from time import time
 import cv2
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from termcolor import colored
- 
+import time
+
 # Configuration
 
 FILENAMES = [
@@ -68,7 +70,8 @@ def analyze_images(filenames: list[str]) -> tuple[list[int], list[int], list[flo
         black_counts.append(black)
         white_percents.append(white_percentage(white, black))
     return white_counts, black_counts, white_percents
- 
+
+
 # Reporting
  
 def print_pixel_counts(filenames, white_counts, black_counts):
@@ -98,6 +101,17 @@ if __name__ == "__main__":
     print_pixel_counts(FILENAMES, white_counts, black_counts)
     print_white_percents(FILENAMES, DEPTHS, white_percents)
     save_csv(FILENAMES, DEPTHS, white_percents)
+
+if __name__ == "__main__":
+    start = time.time()
+
+    white_counts, black_counts, white_percents = analyze_images(FILENAMES)
+    print_pixel_counts(FILENAMES, white_counts, black_counts)
+    print_white_percents(FILENAMES, DEPTHS, white_percents)
+    save_csv(FILENAMES, DEPTHS, white_percents)
+
+    end = time.time()
+    print(f"\nTotal runtime: {end - start:.4f} seconds")
 
 ##############
 # LECTURE 2: UNCOMMENT BELOW
