@@ -21,7 +21,7 @@ FILENAMES = [
     r"images/MASK_SK658 Slobe ch010113.jpg",        
     r"images/MASK_SK658 Slobe ch010098.jpg",
     r"images/MASK_SK658 Llobe ch010022.jpg",
-    r"images/MASK_SK658 Slobe ch010089.jpg",
+    r"images/MASK_SK658 Llobe ch010168.jpg",
     r"images/MASK_SK658 Slobe ch010156.jpg"
 ]
 
@@ -110,50 +110,57 @@ if __name__ == "__main__": # Run the analysis and reporting when the script is e
     end = time.time() # Record the end time
     print(f"\nTotal runtime: {end - start:.4f} seconds") # Print the total runtime of the analysis and reporting in seconds
 
-##############
-# LECTURE 2: UNCOMMENT BELOW
 
-# # Interpolate a point: given a depth, find the corresponding white pixel percentage
+if __name__ == "__main__":
+    start = time.time()
 
-# interpolate_depth = float(input(colored(
-#     "Enter the depth at which you want to interpolate a point (in microns): ", "yellow")))
+    # Run analysis
+    white_counts, black_counts, white_percents = analyze_images(FILENAMES)
+    print_pixel_counts(FILENAMES, white_counts, black_counts)
+    print_white_percents(FILENAMES, DEPTHS, white_percents)
+    save_csv(FILENAMES, DEPTHS, white_percents)
 
-# x = depths
-# y = white_percents
+    end = time.time()
+    print(f"\nTotal runtime: {end - start:.4f} seconds")
 
-# # You can also use 'quadratic', 'cubic', etc.
-# i = interp1d(x, y, kind='linear')
-# interpolate_point = i(interpolate_depth)
-# print(colored(
-#     f'The interpolated point is at the x-coordinate {interpolate_depth} and y-coordinate {interpolate_point}.', "green"))
+    # Interpolation Section
 
-# depths_i = depths[:]
-# depths_i.append(interpolate_depth)
-# white_percents_i = white_percents[:]
-# white_percents_i.append(interpolate_point)
+    interpolate_depth = float(input(colored(
+        "Enter the depth at which you want to interpolate a point (in microns): ",
+        "yellow"
+    )))
 
+    # Sort for interpolation
+    x = np.array(DEPTHS)
+    y = np.array(white_percents)
+    sort_idx = np.argsort(x)
+    x_sorted = x[sort_idx]
+    y_sorted = y[sort_idx]
 
-# # make two plots: one that doesn't contain the interpolated point, just the data calculated from your images, and one that also contains the interpolated point (shown in red)
-# fig, axs = plt.subplots(2, 1)
+    interp_fn = interp1d(x_sorted, y_sorted, kind='cubic', fill_value="extrapolate")
+    interpolated_y = float(interp_fn(interpolate_depth))
 
-# axs[0].scatter(depths, white_percents, marker='o', linestyle='-', color='blue')
-# axs[0].set_title('Plot of depth of image vs percentage white pixels')
-# axs[0].set_xlabel('depth of image (in microns)')
-# axs[0].set_ylabel('white pixels as a percentage of total pixels')
-# axs[0].grid(True)
+    print(colored(
+        f"The interpolated point is at depth {interpolate_depth} µm "
+        f"with estimated white pixel percentage {interpolated_y:.4f}%.",
+        "green"
+    ))
 
+    # Plotting
+    depths_i = list(x_sorted) + [interpolate_depth]
+    white_percents_i = list(y_sorted) + [interpolated_y]
 
-# axs[1].scatter(depths_i, white_percents_i, marker='o',
-#                linestyle='-', color='blue')
-# axs[1].set_title(
-#     'Plot of depth of image vs percentage white pixels with interpolated point (in red)')
-# axs[1].set_xlabel('depth of image (in microns)')
-# axs[1].set_ylabel('white pixels as a percentage of total pixels')
-# axs[1].grid(True)
-# axs[1].scatter(depths_i[len(depths_i)-1], white_percents_i[len(white_percents_i)-1],
-#                color='red', s=100, label='Highlighted point')
+    fig, axs = plt.subplots(2, 1, figsize=(7, 10))
 
+    axs[0].plot(x_sorted, y_sorted, marker='o', color='blue')
+    axs[0].set_title('Depth vs % White Pixels')
+    axs[0].grid(True)
 
-# # Adjust layout to prevent overlap
-# plt.tight_layout()
-# plt.show()
+    axs[1].plot(x_sorted, y_sorted, marker='o', color='blue')
+    axs[1].scatter(interpolate_depth, interpolated_y, color='red', s=120)
+    axs[1].set_title('Depth vs % White Pixels (with interpolation)')
+    axs[1].grid(True)
+
+    plt.tight_layout()
+    plt.show()
+    
