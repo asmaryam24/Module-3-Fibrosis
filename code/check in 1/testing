@@ -141,7 +141,7 @@ if __name__ == "__main__":
     x_sorted = x[sort_idx]
     y_sorted = y[sort_idx]
 
-    interp_fn = interp1d(x_sorted, y_sorted, kind='linear', fill_value="extrapolate")
+    interp_fn = interp1d(x_sorted, y_sorted, kind='cubic', fill_value="extrapolate")
     interpolated_y = float(interp_fn(interpolate_depth))
 
     print(colored(
