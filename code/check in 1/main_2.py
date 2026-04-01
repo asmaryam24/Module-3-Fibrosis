@@ -165,3 +165,123 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
     
+
+    # IMPROVED INTERPOLATION CODE:
+
+    if __name__ == "__main__":
+    # Record the start time to measure total execution time
+        start_time = time.time()
+
+    # Perform image analysis: load images, count white and black pixels, calculate percentages
+    white_counts, black_counts, white_percents = analyze_images(FILENAMES)
+
+    # Display the pixel counts and percentages, and save results to a CSV file
+    print_pixel_counts(FILENAMES, white_counts, black_counts)
+    print_white_percents(FILENAMES, DEPTHS, white_percents)
+    save_csv(FILENAMES, DEPTHS, white_percents)
+
+    # Record end time and print runtime
+    end_time = time.time()
+    print(f"\nTotal runtime: {end_time - start_time:.4f} seconds")
+
+    # Interpolation Section
+
+    # Prepare data for interpolation by handling potential duplicate depths
+    # First, pair depths with their corresponding white percentages
+    data = list(zip(DEPTHS, white_percents))
+    # Sort the data by depth (first element of each pair)
+    data.sort(key=lambda x: x[0])
+
+    # Initialize lists for unique depths and averaged percentages
+    unique_depths = []
+    avg_percents = []
+
+    # Use defaultdict to group percentages by depth
+    from collections import defaultdict
+    depth_to_percents = defaultdict(list)
+    # Populate the dictionary: key is depth, value is list of percentages at that depth
+    for d, p in data:
+        depth_to_percents[d].append(p)
+
+    # For each unique depth, calculate the average percentage (handles duplicates)
+    for d in sorted(depth_to_percents.keys()):
+        unique_depths.append(d)
+        avg_percents.append(np.mean(depth_to_percents[d]))
+
+    # Convert to numpy arrays for efficient numerical operations
+    x_sorted = np.array(unique_depths)  # Sorted unique depths
+    y_sorted = np.array(avg_percents)   # Corresponding averaged percentages
+
+    # Define the depths at which we want to interpolate fibrosis percentages
+    # These are depths where no images were taken, so we estimate values
+    interp_depths = [1500, 3000, 4500, 6000, 7500, 9000]
+
+    # List of interpolation methods to compare: linear, quadratic, and cubic
+    methods = ['linear', 'quadratic', 'cubic']
+
+    # Dictionary to store interpolation results: method -> list of (depth, interpolated_value) tuples
+    interp_results = {method: [] for method in methods}
+
+    # Perform interpolation for each depth and each method
+    for depth in interp_depths:
+        for method in methods:
+            # Create interpolation function based on method
+            if method == 'linear':
+                # Linear interpolation: connects points with straight lines
+                interp_fn = interp1d(x_sorted, y_sorted, kind='linear', fill_value="extrapolate")
+            elif method == 'quadratic':
+                # Quadratic interpolation: fits a quadratic curve (parabola) between points
+                # Requires at least 3 data points
+                if len(x_sorted) >= 3:
+                    interp_fn = interp1d(x_sorted, y_sorted, kind='quadratic', fill_value="extrapolate")
+                else:
+                    print(f"Not enough points for {method}, skipping")
+                    continue
+            elif method == 'cubic':
+                # Cubic interpolation: fits a cubic curve, smoother than quadratic
+                # Requires at least 4 data points
+                if len(x_sorted) >= 4:
+                    interp_fn = interp1d(x_sorted, y_sorted, kind='cubic', fill_value="extrapolate")
+                else:
+                    print(f"Not enough points for {method}, skipping")
+                    continue
+
+            # Evaluate the interpolation function at the specified depth
+            interpolated_y = float(interp_fn(depth))
+
+            # Store the result
+            interp_results[method].append((depth, interpolated_y))
+
+            # Print the interpolated value with colored output
+            print(colored(
+                f"{method.capitalize()} interpolation at {depth} µm: {interpolated_y:.4f}% white pixels",
+                "green"
+            ))
+
+    # Create a grid of subplots: rows = depths, columns = methods
+    fig, axs = plt.subplots(len(interp_depths), len(methods), figsize=(15, 20))
+
+    # Plot each interpolation result
+    for i, depth in enumerate(interp_depths):
+        for j, method in enumerate(methods):
+            # Check if we have results for this method (in case it was skipped)
+            if len(interp_results[method]) > i:
+                ax = axs[i, j]
+                # Plot the original data points as blue line with circles
+                ax.plot(x_sorted, y_sorted, 'o-', color='blue', label='Data')
+                # Plot the interpolated point as a red dot
+                _, interp_y = interp_results[method][i]
+                ax.scatter(depth, interp_y, color='red', s=100, label=f'Interpolated at {depth} µm')
+                # Set plot title, labels, and grid
+                ax.set_title(f'{method.capitalize()} at {depth} µm')
+                ax.set_xlabel('Depth (µm)')
+                ax.set_ylabel('% White Pixels')
+                ax.grid(True)
+                ax.legend()
+            else:
+                # Hide subplot if no data (method was skipped)
+                axs[i, j].set_visible(False)
+
+    # Adjust layout and display the plots
+    plt.tight_layout()
+    plt.show()
